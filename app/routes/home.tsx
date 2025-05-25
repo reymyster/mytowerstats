@@ -1,4 +1,6 @@
 import type { Route } from "./+types/home";
+import { redirect } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -7,7 +9,13 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function loader({ context }: Route.LoaderArgs) {
+export async function loader(args: Route.LoaderArgs) {
+  const { userId } = await getAuth(args);
+
+  if (userId) {
+    return redirect("/dashboard");
+  }
+
   return { message: "Hello from Vercel" };
 }
 

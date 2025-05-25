@@ -13,7 +13,7 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { UserButton } from "@clerk/react-router";
+import { UserButton, SignOutButton } from "@clerk/react-router";
 
 import {
   Sidebar,
@@ -47,7 +47,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent></SidebarContent>
       <SidebarFooter>
-        <UserButton />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg">
+              <UserButton />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

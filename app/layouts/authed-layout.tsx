@@ -1,4 +1,5 @@
-import { Outlet, Link } from "react-router";
+import { Outlet, Link, redirect, type LoaderFunctionArgs } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
 import { PlusIcon } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+
+export async function loader(args: LoaderFunctionArgs) {
+  const { userId } = await getAuth(args);
+
+  if (!userId) return redirect("/");
+}
 
 export default function Layout() {
   return (
