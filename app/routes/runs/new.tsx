@@ -41,16 +41,43 @@ export default function NewRun() {
   const [progress, setProgress] = useState<number>(0);
   const [stats, setStats] = useState<RoundStats>({ runType: "farming" });
 
-  function onFilesChanged(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFilesChanged(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
 
-    const files = Array.from(e.target.files)
-      .map((f) => ({
-        file: f,
-        url: URL.createObjectURL(f),
-      }))
-      .toSorted((a, b) => a.file.lastModified - b.file.lastModified);
-    setScreens(files);
+    // 1. Turn FileList → Array<File>
+    const inputFiles = Array.from(e.target.files);
+
+    // 2. Preprocess & rewrap as File
+    const processedScreens = await Promise.all(
+      inputFiles.map(async (origFile) => {
+        // your existing preprocessImage util:
+        // returns a Blob that’s resized, grayscale & compressed
+        const blob = await preprocessImage(origFile, /*quality*/ 0.75);
+
+        // wrap the blob in a File so it retains name + lastModified
+        const processedFile = new File([blob], origFile.name, {
+          type: blob.type,
+          lastModified: origFile.lastModified,
+        });
+        console.log({
+          originalSize: origFile.size,
+          compressedSize: processedFile.size,
+        });
+
+        return {
+          file: processedFile, // now has .name & .lastModified
+          originalName: origFile.name, // for reference if you need it
+          lastModified: origFile.lastModified, // easy sorting
+          url: URL.createObjectURL(processedFile),
+        };
+      })
+    );
+
+    // 3. Sort however you like, e.g. by original timestamp
+    processedScreens.sort((a, b) => a.lastModified - b.lastModified);
+
+    // 4. Store in state for OCR + preview
+    setScreens(processedScreens);
   }
 
   function calcAndSetStats(input: RoundStats) {
@@ -89,10 +116,10 @@ export default function NewRun() {
     setScreens(results);
   }
 
-  if (Object.keys(stats).length > 0) {
-    console.log("%cStats", "color: green, font-size: 20px");
-    console.table(stats);
-  }
+  // if (Object.keys(stats).length > 0) {
+  //   console.log("%cStats", "color: green, font-size: 20px");
+  //   console.table(stats);
+  // }
 
   const allScreensProcessed =
     progress === 100 &&
@@ -120,7 +147,7 @@ export default function NewRun() {
       </div>
       {progress > 0 && progress < 100 && <Progress value={progress} />}
       {allScreensProcessed && (
-        <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 2xl:grid-cols-[2fr_1fr]">
           <Tabs defaultValue="0" className="w-full">
             <TabsList
               className="grid w-full grid-cols-(--file-count)"
@@ -485,4 +512,53 @@ export default function NewRun() {
       )}
     </div>
   );
+}
+/**
+ * Preprocess an image by converting to grayscale, and compressing.
+ * @param file - The original image File
+ * @param quality - JPEG/WebP quality between 0 and 1
+ */
+async function preprocessImage(file: File, quality = 0.75): Promise<Blob> {
+  // 1. Load into an HTMLImageElement
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      res(image);
+    };
+    image.onerror = rej;
+    image.src = url;
+  });
+
+  // 2. Calculate target dimensions
+  const { width, height } = img;
+
+  // 3. Draw & desaturate on a canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0, width, height);
+
+  // Grab pixel data, convert each pixel to its luminance
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    // Standard luminance formula
+    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    data[i] = data[i + 1] = data[i + 2] = lum;
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  // 4. Export as compressed JPEG (or change mimeType to 'image/webp')
+  return new Promise<Blob>((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+      },
+      "image/jpeg",
+      quality
+    );
+  });
 }
