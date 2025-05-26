@@ -17,6 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { NavBreadcrumbs } from "~/components/nav-breadcrumbs";
 
 export async function loader(args: LoaderFunctionArgs) {
   const { userId } = await getAuth(args);
@@ -32,17 +33,11 @@ export default function Layout() {
         <header className="flex h-16 shrink-0 items-center gap-2 justify-between">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  Home
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <NavBreadcrumbs />
           </div>
           <div className="px-4">
             <Button asChild variant="outline" size="icon">
-              <Link to={{ hash: "#" }}>
+              <Link to={{ pathname: "/runs/new" }}>
                 <PlusIcon className="size-4" />
               </Link>
             </Button>

@@ -1,4 +1,9 @@
 import type { Route } from "./+types/dashboard";
+import type { BreadcrumbHandle } from "~/types/breadcrumb";
+
+export const handle: BreadcrumbHandle = {
+  breadcrumb: () => "Home",
+};
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
   return (

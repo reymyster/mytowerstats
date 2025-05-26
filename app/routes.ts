@@ -3,6 +3,7 @@ import {
   index,
   route,
   layout,
+  prefix,
 } from "@react-router/dev/routes";
 
 export default [
@@ -13,5 +14,6 @@ export default [
   ]),
   layout("layouts/authed-layout.tsx", [
     route("dashboard", "routes/dashboard.tsx"),
+    ...prefix("runs", [route("new", "routes/runs/new.tsx")]),
   ]),
 ] satisfies RouteConfig;
