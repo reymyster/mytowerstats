@@ -1,6 +1,6 @@
 import type { Route } from "./+types/new";
 import React, { useState, useEffect } from "react";
-import { Form } from "react-router";
+import { Form, redirect } from "react-router";
 import type { BreadcrumbHandle } from "~/types/breadcrumb";
 import { createWorker, type RecognizeResult } from "tesseract.js";
 import { formatRelative } from "date-fns";
@@ -25,6 +25,12 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "convex/_generated/api";
+import { getAuth } from "@clerk/react-router/ssr.server";
+
+// Instantiate once per server (e.g. top of file)
+const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL ?? "");
 
 interface ScreenData {
   file: File;
@@ -37,20 +43,31 @@ export const handle: BreadcrumbHandle = {
   breadcrumb: () => "New Run",
 };
 
-export async function action({ request }: Route.ActionArgs) {
-  let formData = await request.formData();
+export async function action(args: Route.ActionArgs) {
+  const { userId } = await getAuth(args);
+  let formData = await args.request.formData();
   let preStats = formData.get("stats") as string;
   let stats = JSON.parse(preStats) as RoundStats;
 
-  console.log({ stats });
+  const response = await convex.mutation(api.runs.create, {
+    userId: userId!,
+    stats,
+  });
 
-  return { success: true };
+  if (response) {
+    return redirect("/runs");
+  }
+
+  return { success: false };
 }
 
 export default function NewRun({ actionData }: Route.ComponentProps) {
   const [screens, setScreens] = useState<ScreenData[]>([]);
   const [progress, setProgress] = useState<number>(0);
-  const [stats, setStats] = useState<RoundStats>({ runType: "farming" });
+  const [stats, setStats] = useState<RoundStats>({
+    recorded: Date.now(),
+    runType: "farming",
+  });
 
   async function onFilesChanged(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
@@ -228,11 +245,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                       }
                       readOnly={true}
                     />
-                    <input
-                      type="hidden"
-                      name="metaRecorded"
-                      value={stats.recorded ?? 0}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label>Run Type</Label>
@@ -264,11 +276,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         <Label htmlFor="rtTournament">Tournament</Label>
                       </div>
                     </RadioGroup>
-                    <input
-                      type="hidden"
-                      name="metaRunType"
-                      value={stats.runType}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="metaCoinsPerHourText">Coins / Hour</Label>
@@ -281,11 +288,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                       )}/h`}
                       readOnly={true}
                     />
-                    <input
-                      type="hidden"
-                      name="metaCoinsPerHour"
-                      value={stats.battleReport?.coinsPerHour ?? 0}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="metaCellsPerHourText">Cells / Hour</Label>
@@ -297,11 +299,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         stats.battleReport?.cellsPerHour ?? 0
                       )}/h`}
                       readOnly={true}
-                    />
-                    <input
-                      type="hidden"
-                      name="metaCellsPerHour"
-                      value={stats.battleReport?.cellsPerHour ?? 0}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -316,11 +313,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         stats.battleReport?.rerollShardsPerHour ?? 0
                       )}/h`}
                       readOnly={true}
-                    />
-                    <input
-                      type="hidden"
-                      name="metaShardsPerHour"
-                      value={stats.battleReport?.rerollShardsPerHour ?? 0}
                     />
                   </div>
                 </CardContent>
@@ -347,11 +339,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         })
                       }
                     />
-                    <input
-                      type="hidden"
-                      name="battleReportGameTime"
-                      value={stats.battleReport?.gameTime}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="battleReportRealTimeText">Real Time</Label>
@@ -369,11 +356,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                           },
                         })
                       }
-                    />
-                    <input
-                      type="hidden"
-                      name="battleReportRealTime"
-                      value={stats.battleReport?.realTime}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -393,11 +375,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         })
                       }
                     />
-                    <input
-                      type="hidden"
-                      name="battleReportTier"
-                      value={stats.battleReport?.tier}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="battleReportWaveText">Wave</Label>
@@ -415,11 +392,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                           },
                         })
                       }
-                    />
-                    <input
-                      type="hidden"
-                      name="battleReportWave"
-                      value={stats.battleReport?.wave}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -441,11 +413,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         })
                       }
                     />
-                    <input
-                      type="hidden"
-                      name="battleReportCoinsEarned"
-                      value={stats.battleReport?.coinsEarned}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="battleReportCashEarnedText">
@@ -465,11 +432,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                           },
                         })
                       }
-                    />
-                    <input
-                      type="hidden"
-                      name="battleReportCashEarned"
-                      value={stats.battleReport?.cashEarned}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -491,11 +453,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                         })
                       }
                     />
-                    <input
-                      type="hidden"
-                      name="battleReportCellsEarned"
-                      value={stats.battleReport?.cellsEarned}
-                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="battleReportRerollShardsEarnedText">
@@ -515,11 +472,6 @@ export default function NewRun({ actionData }: Route.ComponentProps) {
                           },
                         })
                       }
-                    />
-                    <input
-                      type="hidden"
-                      name="battleReportRerollShardsEarned"
-                      value={stats.battleReport?.rerollShardsEarned}
                     />
                   </div>
                 </CardContent>

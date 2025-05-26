@@ -1,5 +1,5 @@
 export type RoundStats = {
-  recorded?: number;
+  recorded: number;
   runType: "farming" | "milestone" | "tournament";
   battleReport?: {
     gameTimeText?: string;
@@ -47,7 +47,7 @@ export function textToStats(text: string): RoundStats {
       sectionIndex,
     };
   });
-  let parsed: RoundStats = { runType: "farming" };
+  let parsed: RoundStats = { recorded: Date.now(), runType: "farming" };
   if (
     sections[0].sectionIndex > 0 &&
     sections[1].sectionIndex > sections[0].sectionIndex

@@ -14,6 +14,9 @@ export default [
   ]),
   layout("layouts/authed-layout.tsx", [
     route("dashboard", "routes/dashboard.tsx"),
-    ...prefix("runs", [route("new", "routes/runs/new.tsx")]),
+    ...prefix("runs", [
+      index("routes/runs/list.tsx"),
+      route("new", "routes/runs/new.tsx"),
+    ]),
   ]),
 ] satisfies RouteConfig;

@@ -1,4 +1,9 @@
-import { ChevronRightIcon, PlusIcon, type LucideIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  PlusIcon,
+  ListIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "react-router";
 import {
   Collapsible,
@@ -23,6 +28,12 @@ export function NavRuns() {
       <SidebarGroupLabel>Runs</SidebarGroupLabel>
       <SidebarMenu>
         <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <Link to={{ pathname: "/runs" }}>
+              <ListIcon />
+              <span>List</span>
+            </Link>
+          </SidebarMenuButton>
           <SidebarMenuButton asChild>
             <Link to={{ pathname: "/runs/new" }}>
               <PlusIcon />
