@@ -1,5 +1,6 @@
 import type { Route } from "./+types/new";
 import React, { useState, useEffect } from "react";
+import { Form } from "react-router";
 import type { BreadcrumbHandle } from "~/types/breadcrumb";
 import { createWorker, type RecognizeResult } from "tesseract.js";
 import { formatRelative } from "date-fns";
@@ -36,7 +37,17 @@ export const handle: BreadcrumbHandle = {
   breadcrumb: () => "New Run",
 };
 
-export default function NewRun() {
+export async function action({ request }: Route.ActionArgs) {
+  let formData = await request.formData();
+  let preStats = formData.get("stats") as string;
+  let stats = JSON.parse(preStats) as RoundStats;
+
+  console.log({ stats });
+
+  return { success: true };
+}
+
+export default function NewRun({ actionData }: Route.ComponentProps) {
   const [screens, setScreens] = useState<ScreenData[]>([]);
   const [progress, setProgress] = useState<number>(0);
   const [stats, setStats] = useState<RoundStats>({ runType: "farming" });
@@ -130,20 +141,27 @@ export default function NewRun() {
     <div className="p-4">
       <h2 className="text-2xl">New Run</h2>
       <div className="flex flex-row gap-2 lg:gap-4 items-center p-2 lg:p-4">
-        <Input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={onFilesChanged}
-        />
-        {screens.length > 0 && (
-          <Button
-            onClick={runBatchOCR}
-            disabled={progress > 0 && progress < 100}
-          >
-            Process {screens.length} Files
-          </Button>
-        )}
+        <Form className="w-full flex flex-row gap-4" method="POST">
+          <Input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={onFilesChanged}
+          />
+          {screens.length > 0 && (
+            <React.Fragment>
+              <Button
+                type="button"
+                onClick={runBatchOCR}
+                disabled={progress > 0 && progress < 100}
+              >
+                Process {screens.length} Files
+              </Button>
+              <input type="hidden" name="stats" value={JSON.stringify(stats)} />
+              <Button type="submit">Save</Button>
+            </React.Fragment>
+          )}
+        </Form>
       </div>
       {progress > 0 && progress < 100 && <Progress value={progress} />}
       {allScreensProcessed && (
@@ -167,14 +185,7 @@ export default function NewRun() {
               <TabsContent key={i} value={`${i}`}>
                 <Card>
                   <CardHeader>{s.file.name}</CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-2">
-                    <div className="max-w-full overflow-y-auto">
-                      <img
-                        src={s.url}
-                        alt={s.file.name}
-                        className="max-w-full"
-                      />
-                    </div>
+                  <CardContent className="grid grid-cols-2 gap-2 max-h-[85svh] overflow-y-auto">
                     {Boolean(s.text) && (
                       <div className="border border-green-700 p-2">
                         <pre>{s.text}</pre>
@@ -185,6 +196,13 @@ export default function NewRun() {
                         <pre>{s.error}</pre>
                       </div>
                     )}
+                    <div className="max-w-full overflow-y-auto">
+                      <img
+                        src={s.url}
+                        alt={s.file.name}
+                        className="max-w-full"
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -318,7 +336,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportGameTimeText"
                       name="battleReportGameTimeText"
-                      value={stats.battleReport?.gameTimeText}
+                      value={stats.battleReport?.gameTimeText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -341,7 +359,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportRealTimeText"
                       name="battleReportRealTimeText"
-                      value={stats.battleReport?.realTimeText}
+                      value={stats.battleReport?.realTimeText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -364,7 +382,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportTierText"
                       name="battleReportTierText"
-                      value={stats.battleReport?.tierText}
+                      value={stats.battleReport?.tierText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -387,7 +405,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportWaveText"
                       name="battleReportWaveText"
-                      value={stats.battleReport?.waveText}
+                      value={stats.battleReport?.waveText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -412,7 +430,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportCoinsEarnedText"
                       name="battleReportCoinsEarnedText"
-                      value={stats.battleReport?.coinsEarnedText}
+                      value={stats.battleReport?.coinsEarnedText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -437,7 +455,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportCashEarnedText"
                       name="battleReportCashEarnedText"
-                      value={stats.battleReport?.cashEarnedText}
+                      value={stats.battleReport?.cashEarnedText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -462,7 +480,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportCellsEarnedText"
                       name="battleReportCellsEarnedText"
-                      value={stats.battleReport?.cellsEarnedText}
+                      value={stats.battleReport?.cellsEarnedText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
@@ -487,7 +505,7 @@ export default function NewRun() {
                       type="text"
                       id="battleReportRerollShardsEarnedText"
                       name="battleReportRerollShardsEarnedText"
-                      value={stats.battleReport?.rerollShardsEarnedText}
+                      value={stats.battleReport?.rerollShardsEarnedText ?? ""}
                       onChange={(e) =>
                         calcAndSetStats({
                           ...stats,
