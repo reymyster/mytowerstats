@@ -100,7 +100,10 @@ function parseTimeToSeconds(input: string | undefined): number | undefined {
   return totalSeconds;
 }
 
-function formatSecondsToDuration(seconds: number): string {
+export function formatSecondsToDuration(
+  seconds: number | undefined
+): string | undefined {
+  if (typeof seconds === "undefined") return undefined;
   const units = [
     { label: "d", value: 86400 },
     { label: "h", value: 3600 },

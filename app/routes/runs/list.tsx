@@ -2,9 +2,10 @@ import type { Route } from "./+types/list";
 import type { BreadcrumbHandle } from "~/types/breadcrumb";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "convex/_generated/api";
-import { formatRelative } from "date-fns";
+import { format } from "date-fns";
 import {
   abbreviateNumber,
+  formatSecondsToDuration,
   textToStats,
   calcStats,
   type RoundStats,
@@ -30,6 +31,11 @@ interface IRun {
   coinsPerHour?: number;
   cellsPerHour?: number;
   rerollShardsPerHour?: number;
+  stats: {
+    battleReport?: {
+      realTime?: number;
+    };
+  };
 }
 
 function num(input: number | undefined): string | undefined {
@@ -53,6 +59,7 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
             <th className="border p-2">Recorded</th>
             <th className="border p-2">Tier</th>
             <th className="border p-2">Wave</th>
+            <th className="border p-2">Real Time</th>
             <th className="border p-2">Coins/H</th>
             <th className="border p-2">Cells/H</th>
             <th className="border p-2">Reroll Shards/H</th>
@@ -61,15 +68,22 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
         <tbody>
           {runs.map((run, i) => (
             <tr key={i}>
-              <td className="border p-2">{i + 1}</td>
+              <td className="border p-2 text-right tabular-nums">{i + 1}</td>
               <td className="border p-2">
-                {formatRelative(new Date(run.recorded), new Date())}
+                {format(new Date(run.recorded), "PPpp")}
               </td>
-              <td className="border p-2 text-right">{run.tier}</td>
-              <td className="border p-2 text-right">{run.wave}</td>
-              <td className="border p-2 text-right">{num(run.coinsPerHour)}</td>
-              <td className="border p-2 text-right">{num(run.cellsPerHour)}</td>
-              <td className="border p-2 text-right">
+              <td className="border p-2 text-right tabular-nums">{run.tier}</td>
+              <td className="border p-2 text-right tabular-nums">{run.wave}</td>
+              <td className="border p-2 text-right tabular-nums">
+                {formatSecondsToDuration(run.stats.battleReport?.realTime)}
+              </td>
+              <td className="border p-2 text-right tabular-nums">
+                {num(run.coinsPerHour)}
+              </td>
+              <td className="border p-2 text-right tabular-nums">
+                {num(run.cellsPerHour)}
+              </td>
+              <td className="border p-2 text-right tabular-nums">
                 {num(run.rerollShardsPerHour)}
               </td>
             </tr>
