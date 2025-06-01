@@ -24,20 +24,6 @@ export async function loader(args: Route.LoaderArgs) {
   return { runs };
 }
 
-interface IRun {
-  recorded: number;
-  tier?: number;
-  wave?: number;
-  coinsPerHour?: number;
-  cellsPerHour?: number;
-  rerollShardsPerHour?: number;
-  stats: {
-    battleReport?: {
-      realTime?: number;
-    };
-  };
-}
-
 function num(input: number | undefined): string | undefined {
   if (typeof input === "undefined") return undefined;
 
@@ -45,9 +31,7 @@ function num(input: number | undefined): string | undefined {
 }
 
 export default function ListRuns({ loaderData }: Route.ComponentProps) {
-  const runs = (loaderData.runs as IRun[]).toSorted(
-    (a, b) => b.recorded - a.recorded
-  );
+  const runs = loaderData.runs.toSorted((a, b) => b.recorded - a.recorded);
 
   return (
     <div className="p-4">
@@ -72,20 +56,18 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
               <td className="border p-2">
                 {format(new Date(run.recorded), "PPpp")}
               </td>
-              <td className="border p-2 text-right tabular-nums">{run.tier}</td>
-              <td className="border p-2 text-right tabular-nums">{run.wave}</td>
               <td className="border p-2 text-right tabular-nums">
-                {formatSecondsToDuration(run.stats.battleReport?.realTime)}
+                {run.battleReport.values.tier}
               </td>
               <td className="border p-2 text-right tabular-nums">
-                {num(run.coinsPerHour)}
+                {run.battleReport.values.wave}
               </td>
               <td className="border p-2 text-right tabular-nums">
-                {num(run.cellsPerHour)}
+                {formatSecondsToDuration(run.battleReport.values.realTime)}
               </td>
-              <td className="border p-2 text-right tabular-nums">
-                {num(run.rerollShardsPerHour)}
-              </td>
+              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
+              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
+              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
             </tr>
           ))}
         </tbody>

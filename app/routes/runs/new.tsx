@@ -51,7 +51,30 @@ export async function action(args: Route.ActionArgs) {
 
   const response = await convex.mutation(api.runs.create, {
     userId: userId!,
-    stats,
+    recorded: stats.recorded,
+    runType: stats.runType,
+    battleReport: {
+      text: {
+        gameTime: stats.battleReport?.gameTimeText ?? "",
+        realTime: stats.battleReport?.realTimeText ?? "",
+        tier: stats.battleReport?.realTimeText ?? "",
+        wave: stats.battleReport?.waveText ?? "",
+        coinsEarned: stats.battleReport?.coinsEarnedText ?? "",
+        cashEarned: stats.battleReport?.cashEarnedText ?? "",
+        cellsEarned: stats.battleReport?.cellsEarnedText ?? "",
+        rerollShardsEarned: stats.battleReport?.rerollShardsEarnedText ?? "",
+      },
+      values: {
+        gameTime: stats.battleReport?.gameTime ?? 0,
+        realTime: stats.battleReport?.realTime ?? 0,
+        tier: stats.battleReport?.realTime ?? 0,
+        wave: stats.battleReport?.wave ?? 0,
+        coinsEarned: stats.battleReport?.coinsEarned ?? 0,
+        cashEarned: stats.battleReport?.cashEarned ?? 0,
+        cellsEarned: stats.battleReport?.cellsEarned ?? 0,
+        rerollShardsEarned: stats.battleReport?.rerollShardsEarned ?? 0,
+      },
+    },
   });
 
   if (response) {
