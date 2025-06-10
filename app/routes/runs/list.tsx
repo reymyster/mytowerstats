@@ -56,18 +56,20 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
               <td className="border p-2">
                 {format(new Date(run.recorded), "PPpp")}
               </td>
+              <td className="border p-2 text-right tabular-nums">{run.tier}</td>
+              <td className="border p-2 text-right tabular-nums">{run.wave}</td>
               <td className="border p-2 text-right tabular-nums">
-                {run.battleReport.values.tier}
+                {formatSecondsToDuration(run.realTime)}
               </td>
               <td className="border p-2 text-right tabular-nums">
-                {run.battleReport.values.wave}
+                {num(run.coinsEarnedPerHour)}
               </td>
               <td className="border p-2 text-right tabular-nums">
-                {formatSecondsToDuration(run.battleReport.values.realTime)}
+                {num(run.cellsEarnedPerHour)}
               </td>
-              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
-              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
-              <td className="border p-2 text-right tabular-nums">{num(0)}</td>
+              <td className="border p-2 text-right tabular-nums">
+                {num(run.rerollShardsEarnedPerHour)}
+              </td>
             </tr>
           ))}
         </tbody>
