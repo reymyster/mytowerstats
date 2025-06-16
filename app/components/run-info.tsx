@@ -5,6 +5,8 @@ import {
   type CSSProperties,
 } from "react";
 import { Form, useSubmit } from "react-router";
+import { createWorker, type RecognizeResult } from "tesseract.js";
+import { formatRelative } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +30,9 @@ import {
   type KeysBySection,
 } from "~/lib/runs/all-labels-map";
 import { defaultFieldValues, type FieldValue } from "~/lib/runs/field-values";
+import { sortedLabels } from "~/lib/runs/sorted-labels";
 import { camelCaseToLabel } from "~/lib/utils";
+import type { FieldConfig } from "~/lib/runs/helpers";
 
 interface ScreenData {
   file: File;
@@ -50,6 +54,7 @@ export function RunInfo() {
     recorded: 0,
     runType: "farming",
   });
+  const [currentSection, setSection] = useState<string>("meta");
   const [screens, setScreens] = useState<ScreenData[]>([]);
   const [progress, setProgress] = useState<number>(0);
   const [fieldValues, setFieldValues] =
@@ -59,6 +64,37 @@ export function RunInfo() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const formData = new FormData();
+
+    for (let i = 0; i < sectionNames.length; i++) {
+      const sectionName = sectionNames[i];
+      const sectionKeys = Object.values(allLabelsToKeys)
+        .filter((v) => v.section === sectionName)
+        .map((v) => v.key);
+
+      const configsByKey = configsBySection[sectionName] as Record<
+        string,
+        FieldConfig
+      >;
+
+      for (let j = 0; j < sectionKeys.length; j++) {
+        const key = sectionKeys[j];
+        const config = configsByKey[key];
+
+        const value = fieldValues[sectionName][key];
+
+        if (!value) {
+          setSection(sectionName);
+          alert(`${camelCaseToLabel(key)} cannot be blank.`);
+          return;
+        }
+
+        if (!config.validate(value)) {
+          setSection(sectionName);
+          alert(`Invalid value for ${camelCaseToLabel(key)}`);
+          return;
+        }
+      }
+    }
 
     formData.append("meta", JSON.stringify(meta));
     formData.append("fieldValues", JSON.stringify(fieldValues));
@@ -76,7 +112,7 @@ export function RunInfo() {
     );
     formData.append("fileInfo", JSON.stringify(fileInfo));
 
-    submit(formData, { method: "POST" });
+    submit(formData, { method: "POST", encType: "multipart/form-data" });
   }
 
   function getValueByKey({
@@ -144,6 +180,65 @@ export function RunInfo() {
     setScreens(processedScreens);
   }
 
+  async function runOCR() {
+    let completedScreens = 0;
+
+    const worker = await createWorker("eng", undefined, {
+      logger: (m) => {
+        if (m.status === "recognizing text") {
+          if (completedScreens === screens.length) {
+            setProgress(100);
+            return;
+          }
+
+          const progress = Math.round(
+            ((completedScreens + m.progress) / screens.length) * 100
+          );
+          setProgress(progress);
+        }
+      },
+    });
+
+    const results = await Promise.all(
+      screens.map(async (screen) => {
+        try {
+          const {
+            data: { text },
+          }: RecognizeResult = await worker.recognize(screen.url);
+          completedScreens++;
+          return { ...screen, text };
+        } catch (e: any) {
+          return { ...screen, error: e.message || "OCR failed" };
+        }
+      })
+    );
+
+    await worker.terminate();
+    const resultText = results
+      .filter((s) => Boolean(s.text))
+      .map((s) => s.text ?? "")
+      .join("\n");
+    processText(resultText);
+    setScreens(results);
+    setMeta((prev) => ({ ...prev, recorded: results[0].file.lastModified }));
+  }
+
+  function processText(text: string) {
+    const lines = text.split("\n");
+    console.table(lines);
+    console.table(sortedLabels);
+
+    lines.forEach((line) => {
+      const label = sortedLabels.find((l) => line.startsWith(`${l} `));
+
+      if (!label) return;
+
+      const key = allLabelsToKeys[label];
+      const value = line.replace(`${label} `, "");
+      setValueByKey(key, value);
+    });
+  }
+
   return (
     <div>
       <div className="flex flex-row gap-2 lg:gap-4 items-center p-2 lg:p-4">
@@ -156,7 +251,11 @@ export function RunInfo() {
           />
           {screens.length > 0 && (
             <Fragment>
-              <Button type="button" disabled={progress > 0 && progress < 100}>
+              <Button
+                type="button"
+                disabled={progress > 0 && progress < 100}
+                onClick={runOCR}
+              >
                 Process {screens.length} Files
               </Button>
               <input
@@ -164,12 +263,16 @@ export function RunInfo() {
                 name="fieldValues"
                 value={JSON.stringify(fieldValues)}
               />
-              <Button type="submit">Save</Button>
+              <Button type="button" onClick={onSubmit}>
+                Save
+              </Button>
             </Fragment>
           )}
         </Form>
       </div>
-      {progress > 0 && progress < 100 && <Progress value={progress} />}
+      {progress > 0 && progress < 100 && (
+        <Progress value={progress} className="mb-2" />
+      )}
       <div className="grid grid-cols-1 gap-2 2xl:grid-cols-[2fr_1fr]">
         {screens.length > 0 && (
           <Tabs defaultValue="0" className="w-full">
@@ -191,7 +294,7 @@ export function RunInfo() {
               <TabsContent key={i} value={`${i}`}>
                 <Card>
                   <CardHeader>{s.file.name}</CardHeader>
-                  <CardContent className="overflow-y-auto max-h-[85svh]">
+                  <CardContent className="overflow-y-auto max-h-[75svh]">
                     <img src={s.url} alt={s.file.name} className="max-w-full" />
                   </CardContent>
                 </Card>
@@ -199,7 +302,7 @@ export function RunInfo() {
             ))}
           </Tabs>
         )}
-        <Tabs defaultValue="meta" className="w-full">
+        <Tabs className="w-full" value={currentSection}>
           <TabsList
             className="grid w-full grid-cols-(--section-count)"
             style={
@@ -210,9 +313,11 @@ export function RunInfo() {
               } as CSSProperties
             }
           >
-            <TabsTrigger value="meta">Meta</TabsTrigger>
+            <TabsTrigger value="meta" onClick={() => setSection("meta")}>
+              Meta
+            </TabsTrigger>
             {sectionNames.map((s) => (
-              <TabsTrigger key={s} value={s}>
+              <TabsTrigger key={s} value={s} onClick={() => setSection(s)}>
                 {camelCaseToLabel(s)}
               </TabsTrigger>
             ))}
@@ -220,20 +325,57 @@ export function RunInfo() {
           <TabsContent value="meta">
             <Card>
               <CardHeader>Meta</CardHeader>
-              <CardContent className="flex flex-col gap-6"></CardContent>
+              <CardContent className="flex flex-col gap-6 overflow-y-auto max-h-[75svh]">
+                <div className="flex flex-col gap-2">
+                  <Label>Recorded</Label>
+                  <Input
+                    type="text"
+                    readOnly={true}
+                    value={
+                      meta.recorded
+                        ? formatRelative(new Date(meta.recorded), new Date())
+                        : ""
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Run Type</Label>
+                  <RadioGroup
+                    defaultValue={meta.runType}
+                    onValueChange={(e) =>
+                      setMeta((prev) => ({ ...prev, runType: e }))
+                    }
+                    className="flex flex-row"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="farming" id="rtFarming" />
+                      <Label htmlFor="rtFarming">Farming</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="milestone" id="rtMilestone" />
+                      <Label htmlFor="rtMilestone">Milestone</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="tournament" id="rtTournament" />
+                      <Label htmlFor="rtTournament">Tournament</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
           {sectionNames.map((section) => (
             <TabsContent value={section} key={section}>
               <Card>
                 <CardHeader>{camelCaseToLabel(section)}</CardHeader>
-                <CardContent className="flex flex-col gap-6">
+                <CardContent className="flex flex-col gap-6 overflow-y-auto max-h-[75svh]">
                   {Object.values(allLabelsToKeys)
                     .filter((v) => v.section === section)
                     .map((value) => (
                       <div key={value.key} className="flex flex-col gap-2">
                         <Label>{camelCaseToLabel(value.key)}</Label>
                         <Input
+                          className="font-mono"
                           type="text"
                           value={getValueByKey({ section, key: value.key })}
                           onChange={(e) =>

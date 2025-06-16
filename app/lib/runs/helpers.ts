@@ -6,7 +6,7 @@ export type FieldConfig = {
   readonly parse: (raw: string) => number;
 };
 
-const reLargeNumber = /^\s*\$?(\d+(?:\.\d+)?)\s*([KMBTqQsSoNdD])?\s*$/;
+const reLargeNumber = /^\s*\$?(\d+(?:\.\d+)?)\s*([KMBTqQsSONdD])?\s*$/;
 
 export function validateLargeNumber(raw: string): boolean {
   return reLargeNumber.test(raw);

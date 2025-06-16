@@ -11,7 +11,7 @@ import {
 export const combatKeys = [
   "damageTaken",
   "damageTakenWall",
-  "damageTakenWhileBerseked",
+  "damageTakenWhileBerserked",
   "damageGainFromBerserk",
   "deathDefy",
   "lifesteal",
@@ -24,7 +24,7 @@ export const combatKeys = [
   "landMinesSpawned",
   "renderArmorDamage",
   "deathRayDamage",
-  "smartMissleDamage",
+  "smartMissileDamage",
   "innerLandMineDamage",
   "chainLightningDamage",
   "deathWaveDamage",

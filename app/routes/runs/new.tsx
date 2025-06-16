@@ -25,6 +25,7 @@ export async function action(args: Route.ActionArgs) {
   let preMeta = formData.get("meta") as string;
   let metaValues = JSON.parse(preMeta) as { recorded: number; runType: string };
   let preFileInfo = formData.get("fileInfo") as string;
+  console.log({ preFileInfo });
   let fileInfo = JSON.parse(preFileInfo) as {
     filename: string;
     size: number;
@@ -51,7 +52,6 @@ export async function action(args: Route.ActionArgs) {
 
   const realTimeHours =
     values.battleReport.values.realTime /
-    1000 /* milliseconds/second */ /
     60 /* seconds/minute */ /
     60; /* minutes/hour */
 
@@ -75,19 +75,6 @@ export async function action(args: Route.ActionArgs) {
   });
 
   return redirect("/runs");
-
-  //   const response = await convex.mutation(api.runs.create, {
-  //     header: {
-  //         userId: userId!
-  //     },
-  //     values: {
-  //         battleReport: {
-  //             text: {
-  //                 ...(fieldValues['battleReport'] as Record<BattleReportKey, string>)
-  //             }
-  //         }
-  //     }
-  //   });
 }
 
 export default function NewRun() {

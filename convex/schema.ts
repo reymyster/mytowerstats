@@ -25,7 +25,6 @@ function generatePairs(keys: readonly string[]) {
 }
 
 /*
-
 export default defineSchema({
   runs: defineTable({
     userId: v.string(),
@@ -38,8 +37,8 @@ export default defineSchema({
     coinsEarnedPerHour: v.number(),
     cellsEarnedPerHour: v.number(),
     rerollShardsEarnedPerHour: v.number(),
-    runValueId: v.id('runValues'),
-    screens: v.array(v.id('runScreens')),
+    runValueId: v.id("runValues"),
+    screens: v.array(v.id("runScreens")),
   }).index("by_user", ["userId"]),
   runScreens: defineTable({
     runId: v.union(v.id("runs"), v.null()),
@@ -55,10 +54,16 @@ export default defineSchema({
     utility: generatePairs(utilityKeys),
   }).index("by_run", ["runId"]),
 });
-
 */
 
 export default defineSchema({
+  runScreens: defineTable({
+    filename: v.string(),
+    lastModified: v.float64(),
+    runId: v.union(v.id("runs"), v.null()),
+    size: v.float64(),
+    storageId: v.id("_storage"),
+  }).index("by_run", ["runId"]),
   runValues: defineTable({
     battleReport: v.object({
       text: v.object({
@@ -96,7 +101,7 @@ export default defineSchema({
         damageGainFromBerserk: v.string(),
         damageTaken: v.string(),
         damageTakenWall: v.string(),
-        damageTakenWhileBerseked: v.string(),
+        damageTakenWhileBerserked: v.string(),
         deathDefy: v.string(),
         deathRayDamage: v.string(),
         deathWaveDamage: v.string(),
@@ -108,7 +113,7 @@ export default defineSchema({
         projectilesCount: v.string(),
         projectilesDamage: v.string(),
         renderArmorDamage: v.string(),
-        smartMissleDamage: v.string(),
+        smartMissileDamage: v.string(),
         swampDamage: v.string(),
         thornDamage: v.string(),
       }),
@@ -119,7 +124,7 @@ export default defineSchema({
         damageGainFromBerserk: v.float64(),
         damageTaken: v.float64(),
         damageTakenWall: v.float64(),
-        damageTakenWhileBerseked: v.float64(),
+        damageTakenWhileBerserked: v.float64(),
         deathDefy: v.float64(),
         deathRayDamage: v.float64(),
         deathWaveDamage: v.float64(),
@@ -131,11 +136,12 @@ export default defineSchema({
         projectilesCount: v.float64(),
         projectilesDamage: v.float64(),
         renderArmorDamage: v.float64(),
-        smartMissleDamage: v.float64(),
+        smartMissileDamage: v.float64(),
         swampDamage: v.float64(),
         thornDamage: v.float64(),
       }),
     }),
+    runId: v.union(v.id("runs"), v.null()),
     utility: v.object({
       text: v.object({
         cashFromGoldenTower: v.string(),
@@ -164,14 +170,6 @@ export default defineSchema({
         wavesSkipped: v.float64(),
       }),
     }),
-    runId: v.union(v.id("runs"), v.null()),
-  }).index("by_run", ["runId"]),
-  runScreens: defineTable({
-    runId: v.union(v.id("runs"), v.null()),
-    storageId: v.id("_storage"),
-    filename: v.string(),
-    size: v.float64(),
-    lastModified: v.float64(),
   }).index("by_run", ["runId"]),
   runs: defineTable({
     cellsEarnedPerHour: v.float64(),
@@ -181,10 +179,10 @@ export default defineSchema({
     recorded: v.float64(),
     rerollShardsEarnedPerHour: v.float64(),
     runType: v.string(),
+    runValueId: v.id("runValues"),
+    screens: v.array(v.id("runScreens")),
     tier: v.float64(),
     userId: v.string(),
     wave: v.float64(),
-    runValueId: v.id("runValues"),
-    screens: v.array(v.id("runScreens")),
   }).index("by_user", ["userId"]),
 });
