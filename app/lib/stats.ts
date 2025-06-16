@@ -177,7 +177,7 @@ export function abbreviateNumber(num: number, decimals = 2): string {
     }
   }
 
-  return num.toString();
+  return num.toFixed(decimals);
 }
 
 function parseInteger(input: string | undefined): number | undefined {
