@@ -44,6 +44,7 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
           <tr>
             <th className="border p-2">#</th>
             <th className="border p-2">Recorded</th>
+            <th className="border p-2">Type</th>
             <th className="border p-2">Tier</th>
             <th className="border p-2">Wave</th>
             <th className="border p-2">Real Time</th>
@@ -60,6 +61,7 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
               <td className="border p-2 tabular-nums">
                 {format(new Date(run.recorded), "eee dd LLL HH:mm")}
               </td>
+              <td className="border p-2 capitalize">{run.runType}</td>
               <td className="border p-2 text-right tabular-nums">{run.tier}</td>
               <td className="border p-2 text-right tabular-nums">{run.wave}</td>
               <td className="border p-2 text-right tabular-nums">
