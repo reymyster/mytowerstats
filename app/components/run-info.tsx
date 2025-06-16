@@ -140,6 +140,8 @@ export function RunInfo() {
 
     const inputFiles = Array.from(e.target.files);
 
+    if (!inputFiles.length) return;
+
     const processedScreens = await Promise.all(
       inputFiles.map(async (origFile) => {
         const blob = await preprocessImage(origFile, /* quality */ 0.4);
@@ -147,11 +149,6 @@ export function RunInfo() {
         const processedFile = new File([blob], origFile.name, {
           type: blob.type,
           lastModified: origFile.lastModified,
-        });
-        console.log({
-          filename: origFile.name,
-          originalSize: origFile.size,
-          compressedSize: processedFile.size,
         });
 
         return {
@@ -225,8 +222,6 @@ export function RunInfo() {
 
   function processText(text: string) {
     const lines = text.split("\n");
-    console.table(lines);
-    console.table(sortedLabels);
 
     lines.forEach((line) => {
       const label = sortedLabels.find((l) => line.startsWith(`${l} `));
@@ -248,6 +243,7 @@ export function RunInfo() {
             accept="image/*"
             multiple
             onChange={onFilesChanged}
+            disabled={screens.length > 0}
           />
           {screens.length > 0 && (
             <Fragment>

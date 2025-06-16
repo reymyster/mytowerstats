@@ -1,7 +1,7 @@
 import { query, mutation, action, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { Doc } from "./_generated/dataModel";
+import { type Doc } from "./_generated/dataModel";
 
 export const get = query({
   args: {},
@@ -29,6 +29,34 @@ export const getSingleFullInfo = query({
       : null;
 
     return { header, values };
+  },
+});
+
+export const remove = mutation({
+  args: { userId: v.string(), runId: v.string() },
+  handler: async (ctx, args) => {
+    const userId = args.userId;
+    const runId = ctx.db.normalizeId("runs", args.runId);
+    if (!runId) return;
+
+    const runMeta = await ctx.db.get(runId);
+
+    if (!runMeta || runMeta.userId !== userId) return;
+
+    const screens = await Promise.all(
+      runMeta.screens.map(async (s) => await ctx.db.get(s))
+    );
+
+    for (let i = 0; i < screens.length; i++) {
+      const rsScreen = screens[i];
+      if (!rsScreen) continue;
+      const { storageId, _id } = rsScreen;
+      await ctx.storage.delete(storageId);
+      await ctx.db.delete(_id);
+    }
+
+    await ctx.db.delete(runMeta.runValueId);
+    await ctx.db.delete(runId);
   },
 });
 
