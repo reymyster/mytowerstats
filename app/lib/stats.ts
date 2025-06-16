@@ -116,7 +116,7 @@ export function formatSecondsToDuration(
   for (const { label, value } of units) {
     const amount = Math.floor(seconds / value);
     if (amount > 0 || parts.length > 0 || label === "s") {
-      parts.push(`${amount}${label}`);
+      parts.push(`${amount.toString().padStart(2, "0")}${label}`);
       seconds %= value;
     }
   }
