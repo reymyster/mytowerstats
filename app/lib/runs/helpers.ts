@@ -33,7 +33,7 @@ export function parseLargeNumber(raw: string): number {
 
   const num = parseFloat(match[1].replace(/,/g, ""));
   const suffix = match[2];
-  const multiplier = suffixMultipliers[suffix];
+  const multiplier = suffixMultipliers[suffix] ?? 1;
 
   return num * multiplier;
 }
@@ -60,7 +60,7 @@ export function defaultIntegerConfig(key: string): FieldConfig {
   };
 }
 
-const reIntegerPlus = /^\s*(\d+)[+]?\s*$/;
+const reIntegerPlus = /^\s*(\d+)([+])?\s*$/;
 export function defaultIntegerPlusConfig(key: string): FieldConfig {
   const label = camelCaseToLabel(key);
   return {
