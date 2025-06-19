@@ -21,14 +21,41 @@ export const getRecentList = query({
 });
 
 export const getSingleFullInfo = query({
-  args: { runId: v.id("runs") },
+  args: { userId: v.string(), runId: v.string() },
   handler: async (ctx, args) => {
-    const header = await ctx.db.get(args.runId);
-    const values = header?.runValueId
-      ? await ctx.db.get(header.runValueId)
-      : null;
+    const userId = args.userId;
+    const runId = ctx.db.normalizeId("runs", args.runId);
+    if (!runId) return;
 
-    return { header, values };
+    const header = await ctx.db.get(runId);
+
+    if (!header || header.userId !== userId) return;
+
+    const values = await ctx.db.get(header.runValueId);
+
+    if (!values) return;
+
+    const screenMeta = await ctx.db
+      .query("runScreens")
+      .withIndex("by_run", (q) => q.eq("runId", runId))
+      .collect();
+
+    const screens = (
+      await Promise.all(
+        header.screens.map(async (s) => {
+          const meta = screenMeta.find((m) => m._id === s);
+
+          if (!meta) return undefined;
+
+          return {
+            ...meta,
+            url: await ctx.storage.getUrl(meta.storageId),
+          };
+        })
+      )
+    ).filter((s) => typeof s !== "undefined");
+
+    return { header, values, screens };
   },
 });
 

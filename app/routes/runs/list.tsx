@@ -1,5 +1,5 @@
 import type { Route } from "./+types/list";
-import { useFetcher } from "react-router";
+import { useFetcher, Link } from "react-router";
 import type { BreadcrumbHandle } from "~/types/breadcrumb";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "convex/_generated/api";
@@ -76,7 +76,15 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
               <td className="border p-2 text-right tabular-nums">
                 {num(run.rerollShardsEarnedPerHour)}
               </td>
-              <td className="border p-2">
+              <td className="border p-2 flex flex-row gap-2 items-center">
+                <Button
+                  type="button"
+                  variant={"default"}
+                  className="cursor-pointer"
+                  asChild
+                >
+                  <Link to={`/runs/edit/${run._id}`}>View</Link>
+                </Button>
                 <fetcher.Form method="POST" action={`/runs/remove/${run._id}`}>
                   <Button
                     type="submit"

@@ -17,6 +17,7 @@ export default [
     ...prefix("runs", [
       index("routes/runs/list.tsx"),
       route("new", "routes/runs/new.tsx"),
+      route("edit/:runId", "routes/runs/edit.tsx"),
       route("remove/:runId", "routes/runs/remove.tsx"),
     ]),
   ]),

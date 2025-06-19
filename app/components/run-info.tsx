@@ -33,6 +33,7 @@ import { defaultFieldValues, type FieldValue } from "~/lib/runs/field-values";
 import { sortedLabels } from "~/lib/runs/sorted-labels";
 import { camelCaseToLabel } from "~/lib/utils";
 import type { FieldConfig } from "~/lib/runs/helpers";
+import type { Doc } from "convex/_generated/dataModel";
 
 interface ScreenData {
   file: File;
@@ -49,13 +50,32 @@ interface MetaValues {
   runType: string;
 }
 
-export function RunInfo() {
+interface RunInfoProps {
+  data?: {
+    header: Doc<"runs">;
+    values: Doc<"runValues">;
+    screens: (Doc<"runScreens"> & { url: string | null })[];
+  };
+}
+
+export function RunInfo({ data }: RunInfoProps) {
+  const editing = Boolean(data);
   const [meta, setMeta] = useState<MetaValues>({
-    recorded: 0,
-    runType: "farming",
+    recorded: data?.header?.recorded ?? 0,
+    runType: data?.header?.runType ?? "farming",
   });
   const [currentSection, setSection] = useState<string>("meta");
-  const [screens, setScreens] = useState<ScreenData[]>([]);
+  const [screens, setScreens] = useState<ScreenData[]>(
+    data?.screens?.map(
+      (s) =>
+        ({
+          originalName: s.filename,
+          lastModified: s.lastModified,
+          url: s.url,
+          size: s.size,
+        } as ScreenData)
+    ) ?? []
+  );
   const [progress, setProgress] = useState<number>(0);
   const [fieldValues, setFieldValues] =
     useState<FieldValue>(defaultFieldValues);
@@ -136,7 +156,7 @@ export function RunInfo() {
   }
 
   async function onFilesChanged(e: ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files) return;
+    if (!e.target.files || editing) return;
 
     const inputFiles = Array.from(e.target.files);
 
@@ -282,16 +302,21 @@ export function RunInfo() {
             >
               {screens.map((s, i) => (
                 <TabsTrigger key={i} value={`${i}`}>
-                  {s.file.name}
+                  {s.originalName}
                 </TabsTrigger>
               ))}
             </TabsList>
             {screens.map((s, i) => (
               <TabsContent key={i} value={`${i}`}>
                 <Card>
-                  <CardHeader>{s.file.name}</CardHeader>
+                  <CardHeader>{s.originalName}</CardHeader>
                   <CardContent className="overflow-y-auto max-h-[75svh]">
-                    <img src={s.url} alt={s.file.name} className="max-w-full" />
+                    <img
+                      src={s.url}
+                      alt={s.originalName}
+                      className="max-w-full"
+                      loading="lazy"
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
