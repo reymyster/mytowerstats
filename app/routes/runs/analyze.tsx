@@ -59,27 +59,28 @@ export async function loader(args: Route.LoaderArgs) {
   const damageShareData = [
     {
       from: "blackHole",
-      damage: combatValues.blackHoleDamage / combatValues.damageDealt,
+      damage: (combatValues.blackHoleDamage * 100) / combatValues.damageDealt,
       fill: "var(--color-blackHole)",
     },
     {
       from: "chainLightning",
-      damage: combatValues.chainLightningDamage / combatValues.damageDealt,
+      damage:
+        (combatValues.chainLightningDamage * 100) / combatValues.damageDealt,
       fill: "var(--color-chainLightning)",
     },
     {
       from: "orb",
-      damage: combatValues.orbDamage / combatValues.damageDealt,
+      damage: (combatValues.orbDamage * 100) / combatValues.damageDealt,
       fill: "var(--color-orb)",
     },
     {
       from: "swamp",
-      damage: combatValues.swampDamage / combatValues.damageDealt,
+      damage: (combatValues.swampDamage * 100) / combatValues.damageDealt,
       fill: "var(--color-swamp)",
     },
     {
       from: "thorn",
-      damage: combatValues.thornDamage / combatValues.damageDealt,
+      damage: (combatValues.thornDamage * 100) / combatValues.damageDealt,
       fill: "var(--color-thorn)",
     },
   ];
@@ -97,25 +98,25 @@ const chartData = [
 ];
 
 const damageShareConfig = {
-  blackHole: {
-    label: "Black Hole",
+  orb: {
+    label: "Orb",
     color: "var(--chart-1)",
   },
   chainLightning: {
     label: "Chain Lightning",
-    color: "var(--chart-2)",
-  },
-  orb: {
-    label: "Orb",
     color: "var(--chart-3)",
+  },
+  blackHole: {
+    label: "Black Hole",
+    color: "var(--chart-5)",
   },
   swamp: {
     label: "Swamp",
-    color: "var(--chart-4)",
+    color: "var(--chart-2)",
   },
   thorn: {
     label: "Thorn",
-    color: "var(--chart-5)",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig;
 
@@ -142,12 +143,12 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
                   <ChartTooltipContent
                     hideLabel
                     formatter={(value, name) => (
-                      <div className="flex min-w-[130px] items-center text-xs text-muted-foreground">
+                      <div className="flex flex-row min-w-[148px] items-center justify-between text-xs text-muted-foreground">
                         {damageShareConfig[
                           name as keyof typeof damageShareConfig
                         ]?.label || name}
                         <div className="ml-auto flex items-baseline font-mono font-medium tabular-nums text-foreground">
-                          {value}%
+                          {(value as number).toFixed(2)}%
                         </div>
                       </div>
                     )}

@@ -1,5 +1,6 @@
 import {
   Fragment,
+  useMemo,
   useState,
   type ChangeEvent,
   type CSSProperties,
@@ -29,7 +30,7 @@ import {
   configsBySection,
   type KeysBySection,
 } from "~/lib/runs/all-labels-map";
-import { defaultFieldValues, type FieldValue } from "~/lib/runs/field-values";
+import { getDefaultFieldValue, type FieldValue } from "~/lib/runs/field-values";
 import { sortedLabels } from "~/lib/runs/sorted-labels";
 import { camelCaseToLabel } from "~/lib/utils";
 import type { FieldConfig } from "~/lib/runs/helpers";
@@ -60,6 +61,10 @@ interface RunInfoProps {
 
 export function RunInfo({ data }: RunInfoProps) {
   const editing = Boolean(data);
+  const defaultFieldValues = useMemo(
+    () => getDefaultFieldValue(data?.values),
+    [data]
+  );
   const [meta, setMeta] = useState<MetaValues>({
     recorded: data?.header?.recorded ?? 0,
     runType: data?.header?.runType ?? "farming",
@@ -119,18 +124,20 @@ export function RunInfo({ data }: RunInfoProps) {
     formData.append("meta", JSON.stringify(meta));
     formData.append("fieldValues", JSON.stringify(fieldValues));
 
-    screens.forEach((screen) => {
-      formData.append("screenshots", screen.file, screen.originalName);
-    });
+    if (!editing) {
+      screens.forEach((screen) => {
+        formData.append("screenshots", screen.file, screen.originalName);
+      });
 
-    const fileInfo = screens.map(
-      ({ originalName: filename, size, lastModified }) => ({
-        filename,
-        size,
-        lastModified,
-      })
-    );
-    formData.append("fileInfo", JSON.stringify(fileInfo));
+      const fileInfo = screens.map(
+        ({ originalName: filename, size, lastModified }) => ({
+          filename,
+          size,
+          lastModified,
+        })
+      );
+      formData.append("fileInfo", JSON.stringify(fileInfo));
+    }
 
     submit(formData, { method: "POST", encType: "multipart/form-data" });
   }
@@ -258,13 +265,15 @@ export function RunInfo({ data }: RunInfoProps) {
     <div>
       <div className="flex flex-row gap-2 lg:gap-4 items-center p-2 lg:p-4">
         <Form className="w-full flex flex-row gap-4" method="POST">
-          <Input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onFilesChanged}
-            disabled={screens.length > 0}
-          />
+          {!editing && (
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={onFilesChanged}
+              disabled={screens.length > 0}
+            />
+          )}
           {screens.length > 0 && (
             <Fragment>
               <Button

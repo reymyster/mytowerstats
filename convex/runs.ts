@@ -87,6 +87,148 @@ export const remove = mutation({
   },
 });
 
+export const modify = mutation({
+  args: {
+    userId: v.string(),
+    runId: v.string(),
+    header: v.object({
+      cellsEarnedPerHour: v.float64(),
+      coinsEarnedPerHour: v.float64(),
+      realTime: v.float64(),
+      realTimeHours: v.float64(),
+      recorded: v.float64(),
+      rerollShardsEarnedPerHour: v.float64(),
+      runType: v.string(),
+      tier: v.float64(),
+      userId: v.string(),
+      wave: v.float64(),
+    }),
+    values: v.object({
+      battleReport: v.object({
+        text: v.object({
+          cashEarned: v.string(),
+          cellsEarned: v.string(),
+          coinsEarned: v.string(),
+          gameTime: v.string(),
+          gemBlocksTapped: v.string(),
+          interestEarned: v.string(),
+          killedBy: v.string(),
+          realTime: v.string(),
+          rerollShardsEarned: v.string(),
+          tier: v.string(),
+          wave: v.string(),
+        }),
+        values: v.object({
+          cashEarned: v.float64(),
+          cellsEarned: v.float64(),
+          coinsEarned: v.float64(),
+          gameTime: v.float64(),
+          gemBlocksTapped: v.float64(),
+          interestEarned: v.float64(),
+          killedBy: v.float64(),
+          realTime: v.float64(),
+          rerollShardsEarned: v.float64(),
+          tier: v.float64(),
+          wave: v.float64(),
+        }),
+      }),
+      combat: v.object({
+        text: v.object({
+          blackHoleDamage: v.string(),
+          chainLightningDamage: v.string(),
+          damageDealt: v.string(),
+          damageGainFromBerserk: v.string(),
+          damageTaken: v.string(),
+          damageTakenWall: v.string(),
+          damageTakenWhileBerserked: v.string(),
+          deathDefy: v.string(),
+          deathRayDamage: v.string(),
+          deathWaveDamage: v.string(),
+          innerLandMineDamage: v.string(),
+          landMineDamage: v.string(),
+          landMinesSpawned: v.string(),
+          lifesteal: v.string(),
+          orbDamage: v.string(),
+          projectilesCount: v.string(),
+          projectilesDamage: v.string(),
+          renderArmorDamage: v.string(),
+          smartMissileDamage: v.string(),
+          swampDamage: v.string(),
+          thornDamage: v.string(),
+        }),
+        values: v.object({
+          blackHoleDamage: v.float64(),
+          chainLightningDamage: v.float64(),
+          damageDealt: v.float64(),
+          damageGainFromBerserk: v.float64(),
+          damageTaken: v.float64(),
+          damageTakenWall: v.float64(),
+          damageTakenWhileBerserked: v.float64(),
+          deathDefy: v.float64(),
+          deathRayDamage: v.float64(),
+          deathWaveDamage: v.float64(),
+          innerLandMineDamage: v.float64(),
+          landMineDamage: v.float64(),
+          landMinesSpawned: v.float64(),
+          lifesteal: v.float64(),
+          orbDamage: v.float64(),
+          projectilesCount: v.float64(),
+          projectilesDamage: v.float64(),
+          renderArmorDamage: v.float64(),
+          smartMissileDamage: v.float64(),
+          swampDamage: v.float64(),
+          thornDamage: v.float64(),
+        }),
+      }),
+      utility: v.object({
+        text: v.object({
+          cashFromGoldenTower: v.string(),
+          coinsFromBlackhole: v.string(),
+          coinsFromDeathWave: v.string(),
+          coinsFromGoldenTower: v.string(),
+          coinsFromSpotlight: v.string(),
+          freeAttackUpgrade: v.string(),
+          freeDefenseUpgrade: v.string(),
+          freeUtilityUpgrade: v.string(),
+          hpFromDeathWave: v.string(),
+          recoveryPackages: v.string(),
+          wavesSkipped: v.string(),
+        }),
+        values: v.object({
+          cashFromGoldenTower: v.float64(),
+          coinsFromBlackhole: v.float64(),
+          coinsFromDeathWave: v.float64(),
+          coinsFromGoldenTower: v.float64(),
+          coinsFromSpotlight: v.float64(),
+          freeAttackUpgrade: v.float64(),
+          freeDefenseUpgrade: v.float64(),
+          freeUtilityUpgrade: v.float64(),
+          hpFromDeathWave: v.float64(),
+          recoveryPackages: v.float64(),
+          wavesSkipped: v.float64(),
+        }),
+      }),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const userId = args.userId;
+    const runId = ctx.db.normalizeId("runs", args.runId);
+    if (!runId) return;
+
+    const runMeta = await ctx.db.get(runId);
+
+    if (!runMeta || runMeta.userId !== userId) return;
+
+    await ctx.db.patch(runMeta._id, {
+      ...args.header,
+    });
+
+    await ctx.db.patch(runMeta.runValueId, {
+      ...args.values,
+    });
+  },
+});
+
 export const saveNew = action({
   args: {
     header: v.object({

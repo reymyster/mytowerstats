@@ -9,9 +9,7 @@ import {
 } from "./sections/battle-report";
 import { combatKeys, type CombatKey } from "./sections/combat";
 import { utilityKeys, type UtilityKey } from "./sections/utility";
-
-// export const fieldValueSections = [...sectionNames, "header"] as const;
-// export type FieldValueSection = (typeof fieldValueSections)[number];
+import type { Doc } from "convex/_generated/dataModel";
 
 export type FieldValue = {
   [section: string]: {
@@ -19,25 +17,29 @@ export type FieldValue = {
   };
 };
 
-// export type FieldValue = {
-//   header: {
-//     recorded: number;
-//     runType: string;
-//   };
-//   battleReport: Record<BattleReportKey, string>;
-//   combat: Record<CombatKey, string>;
-//   utility: Record<UtilityKey, string>;
-// };
+export function getDefaultFieldValue(values?: Doc<"runValues">): FieldValue {
+  if (!values)
+    return {
+      battleReport: battleReportKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
+      combat: combatKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
+      utility: utilityKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
+    };
 
-export function getDefaultFieldValue(): FieldValue {
   return {
-    battleReport: battleReportKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
-    combat: combatKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
-    utility: utilityKeys.reduce((p, c) => ({ ...p, [c]: "" }), {}),
+    battleReport: battleReportKeys.reduce(
+      (p, c) => ({ ...p, [c]: values.battleReport.text[c] }),
+      {}
+    ),
+    combat: combatKeys.reduce(
+      (p, c) => ({ ...p, [c]: values.combat.text[c] }),
+      {}
+    ),
+    utility: utilityKeys.reduce(
+      (p, c) => ({ ...p, [c]: values.utility.text[c] }),
+      {}
+    ),
   };
 }
-
-export const defaultFieldValues = getDefaultFieldValue();
 
 export function parseFieldValues(f: FieldValue) {
   const battleReportText = f["battleReport"] as Record<BattleReportKey, string>;
