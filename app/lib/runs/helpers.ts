@@ -6,7 +6,8 @@ export type FieldConfig = {
   readonly parse: (raw: string) => number;
 };
 
-const reLargeNumber = /^\s*\$?(\d+(?:\.\d+)?)\s*([KMBTqQsSONdD])?\s*$/;
+const reLargeNumber =
+  /^\s*\$?(\d+(?:\.\d+)?)\s*([KMBTqQsSOND]|aa|ab|ac|ad)?\s*$/;
 
 export function validateLargeNumber(raw: string): boolean {
   return reLargeNumber.test(raw);
@@ -24,8 +25,11 @@ export function parseLargeNumber(raw: string): number {
     S: 1e24,
     O: 1e27,
     N: 1e30,
-    d: 1e33,
-    D: 1e36,
+    D: 1e33,
+    aa: 1e36,
+    ab: 1e39,
+    ac: 1e42,
+    ad: 1e45,
   };
 
   const match = raw.match(reLargeNumber);

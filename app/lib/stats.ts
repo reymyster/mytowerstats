@@ -156,8 +156,11 @@ function parseAbbreviatedNumber(input: string | undefined): number | undefined {
 
 export function abbreviateNumber(num: number, decimals = 2): string {
   const suffixes: { suffix: string; value: number }[] = [
-    { suffix: "D", value: 1e36 },
-    { suffix: "d", value: 1e33 },
+    { suffix: "ad", value: 1e45 },
+    { suffix: "ac", value: 1e42 },
+    { suffix: "ab", value: 1e39 },
+    { suffix: "aa", value: 1e36 },
+    { suffix: "D", value: 1e33 },
     { suffix: "N", value: 1e30 },
     { suffix: "O", value: 1e27 },
     { suffix: "S", value: 1e24 },

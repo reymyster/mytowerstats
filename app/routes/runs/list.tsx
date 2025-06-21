@@ -83,7 +83,15 @@ export default function ListRuns({ loaderData }: Route.ComponentProps) {
                   className="cursor-pointer"
                   asChild
                 >
-                  <Link to={`/runs/edit/${run._id}`}>View</Link>
+                  <Link to={`/runs/edit/${run._id}`}>Edit</Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant={"secondary"}
+                  className="cursor-pointer"
+                  asChild
+                >
+                  <Link to={`/runs/analyze/${run._id}`}>Analyze</Link>
                 </Button>
                 <fetcher.Form method="POST" action={`/runs/remove/${run._id}`}>
                   <Button

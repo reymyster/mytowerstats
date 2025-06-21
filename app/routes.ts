@@ -18,6 +18,7 @@ export default [
       index("routes/runs/list.tsx"),
       route("new", "routes/runs/new.tsx"),
       route("edit/:runId", "routes/runs/edit.tsx"),
+      route("analyze/:runId", "routes/runs/analyze.tsx"),
       route("remove/:runId", "routes/runs/remove.tsx"),
     ]),
   ]),
