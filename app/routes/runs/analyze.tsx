@@ -1,16 +1,16 @@
 import type { Route } from "./+types/analyze";
 import React, { useState, useEffect } from "react";
+import { data as dataError } from "react-router";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "convex/_generated/api";
 import { getAuth } from "@clerk/react-router/ssr.server";
 
 import type { BreadcrumbHandle } from "@/types/breadcrumb";
-import { abbreviateNumber } from "~/lib/stats";
 
 // Instantiate once per server (e.g. top of file)
 const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL ?? "");
 
-import { Bar, BarChart, Pie, PieChart } from "recharts";
+import { Bar, BarChart, Pie, PieChart, LabelList } from "recharts";
 import {
   Card,
   CardContent,
@@ -28,33 +28,22 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "#2563eb",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "#60a5fa",
-  },
-} satisfies ChartConfig;
-
 export const handle: BreadcrumbHandle = {
   breadcrumb: () => "Analyze Run",
 };
 
 export async function loader(args: Route.LoaderArgs) {
   const { userId } = await getAuth(args);
+  if (!userId) throw dataError("User not logged in.", { status: 401 });
   const { runId } = args.params;
-
-  if (!userId || !runId) return undefined;
+  if (!runId) throw dataError("Run ID missing.", { status: 400 });
 
   const data = await convex.query(api.runs.getSingleFullInfo, {
     userId,
     runId,
   });
 
-  if (!data) return undefined;
+  if (!data) throw dataError("Run not found.", { status: 404 });
 
   const combatValues = data.values.combat.values;
 
@@ -78,19 +67,12 @@ export async function loader(args: Route.LoaderArgs) {
     getDamage("thorn"),
     getDamage("deathWave"),
     getDamage("projectiles"),
-  ].filter((d) => d.damage > 0.5);
+  ]
+    .filter((d) => d.damage > 0.5)
+    .toSorted((a, b) => b.damage - a.damage);
 
   return { damageShareData };
 }
-
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
 
 const damageShareConfig = {
   orb: {
@@ -124,9 +106,6 @@ const damageShareConfig = {
 } satisfies ChartConfig;
 
 export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
-  if (!loaderData)
-    return <div className="text-red-600">Error loading data.</div>;
-
   return (
     <div className="p-4">
       <h2 className="text-2xl">Analyze Run</h2>
@@ -162,11 +141,17 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
                 data={loaderData.damageShareData}
                 dataKey="damage"
                 nameKey="from"
-              />
-              <ChartLegend
-                content={<ChartLegendContent nameKey="from" />}
-                className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center *:min-w-[120px]"
-              />
+              >
+                <LabelList
+                  dataKey="from"
+                  fontSize={12}
+                  position={"outside"}
+                  offset={10}
+                  formatter={(value: keyof typeof damageShareConfig) =>
+                    damageShareConfig[value]?.label
+                  }
+                />
+              </Pie>
             </PieChart>
           </ChartContainer>
         </CardContent>
