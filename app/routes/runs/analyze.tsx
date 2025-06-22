@@ -23,6 +23,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 
@@ -56,34 +58,27 @@ export async function loader(args: Route.LoaderArgs) {
 
   const combatValues = data.values.combat.values;
 
+  const getDamage = (key: string) => {
+    const damagePercentage =
+      (combatValues[`${key}Damage` as keyof typeof combatValues] * 100) /
+      combatValues.damageDealt;
+    const damage = Number(damagePercentage.toFixed(2));
+    return {
+      from: key,
+      damage,
+      fill: `var(--color-${key})`,
+    };
+  };
+
   const damageShareData = [
-    {
-      from: "blackHole",
-      damage: (combatValues.blackHoleDamage * 100) / combatValues.damageDealt,
-      fill: "var(--color-blackHole)",
-    },
-    {
-      from: "chainLightning",
-      damage:
-        (combatValues.chainLightningDamage * 100) / combatValues.damageDealt,
-      fill: "var(--color-chainLightning)",
-    },
-    {
-      from: "orb",
-      damage: (combatValues.orbDamage * 100) / combatValues.damageDealt,
-      fill: "var(--color-orb)",
-    },
-    {
-      from: "swamp",
-      damage: (combatValues.swampDamage * 100) / combatValues.damageDealt,
-      fill: "var(--color-swamp)",
-    },
-    {
-      from: "thorn",
-      damage: (combatValues.thornDamage * 100) / combatValues.damageDealt,
-      fill: "var(--color-thorn)",
-    },
-  ];
+    getDamage("blackHole"),
+    getDamage("chainLightning"),
+    getDamage("orb"),
+    getDamage("swamp"),
+    getDamage("thorn"),
+    getDamage("deathWave"),
+    getDamage("projectiles"),
+  ].filter((d) => d.damage > 0.5);
 
   return { damageShareData };
 }
@@ -117,6 +112,14 @@ const damageShareConfig = {
   thorn: {
     label: "Thorn",
     color: "var(--chart-4)",
+  },
+  deathWave: {
+    label: "Death Wave",
+    color: "var(--chart-6)",
+  },
+  projectiles: {
+    label: "Projectiles",
+    color: "var(--chart-7)",
   },
 } satisfies ChartConfig;
 
@@ -159,6 +162,10 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
                 data={loaderData.damageShareData}
                 dataKey="damage"
                 nameKey="from"
+              />
+              <ChartLegend
+                content={<ChartLegendContent nameKey="from" />}
+                className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center *:min-w-[120px]"
               />
             </PieChart>
           </ChartContainer>
