@@ -205,25 +205,25 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
         </div>
       )}
       <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div className="aspect-33/9 rounded-xl bg-muted/50 p-2 flex flex-col gap-2">
-          <h3 className="text-xl">Farming</h3>
-          <div className="grid grid-cols-2 gap-1">
+        <div className="aspect-33/9 rounded-xl bg-muted/50 p-2 lg:p-4 flex flex-col gap-2 border border-foreground/30">
+          <h3 className="text-xl">Farm</h3>
+          <div className="grid grid-cols-2 gap-1 text-sm">
             <div>Coins</div>
             <div className="text-right">
-              {loaderData.forFarming?.coins.tier}
+              Tier {loaderData.forFarming?.coins.tier}
             </div>
             <div>Cells</div>
             <div className="text-right">
-              {loaderData.forFarming?.cells.tier}
+              Tier {loaderData.forFarming?.cells.tier}
             </div>
             <div>Reroll Shards</div>
             <div className="text-right">
-              {loaderData.forFarming?.shards.tier}
+              Tier {loaderData.forFarming?.shards.tier}
             </div>
           </div>
         </div>
-        <div className="aspect-33/9 rounded-xl bg-muted/50" />
-        <div className="aspect-33/9 rounded-xl bg-muted/50" />
+        <div className="aspect-33/9 rounded-xl bg-muted/50 border border-foreground/30" />
+        <div className="aspect-33/9 rounded-xl bg-muted/50 border border-foreground/30" />
       </div>
     </div>
   );
