@@ -27,9 +27,9 @@ export async function loader(args: LoaderFunctionArgs) {
 
 export default function Layout() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
+    <SidebarProvider className="bg-[url(/background.png)]">
+      <AppSidebar className="bg-transparent" />
+      <SidebarInset className="bg-background/60">
         <header className="flex h-16 shrink-0 items-center gap-2 justify-between">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
