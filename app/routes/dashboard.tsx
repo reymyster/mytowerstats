@@ -7,6 +7,7 @@ import { api } from "convex/_generated/api";
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { format } from "date-fns";
+import { abbreviateNumber } from "~/lib/stats";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -70,7 +71,7 @@ export async function loader(args: Route.LoaderArgs) {
         ...p,
         [c.toString()]: {
           label: `Tier ${c}`,
-          color: `var(--chart-${4 * i + 1})`,
+          color: `var(--chart-${3 * i + 1})`,
         },
       }),
       {} as Record<string, { label: string; color: string }>
@@ -127,29 +128,28 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       {typeof loaderData.forFarming !== "undefined" && (
         <div className="aspect-4/1 rounded-xl bg-muted/50 p-2">
-          <h3>Farming</h3>
           <Tabs className="w-full" value={farmingSection}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger
                 value="coins"
                 onClick={() => setFarmingSection("coins")}
               >
-                Coins
+                Coins/Hour
               </TabsTrigger>
               <TabsTrigger
                 value="cells"
                 onClick={() => setFarmingSection("cells")}
               >
-                Cells
+                Cells/Hour
               </TabsTrigger>
               <TabsTrigger
                 value="shards"
                 onClick={() => setFarmingSection("shards")}
               >
-                Reroll Shards
+                Reroll Shards/Hour
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="coins" className="aspect-4/1 overflow-hidden">
+            <TabsContent value="coins" className="aspect-4/1">
               <ChartContainer
                 config={loaderData.forFarming.coinGraphConfig}
                 className="!aspect-auto h-full"
@@ -158,7 +158,6 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
                   accessibilityLayer
                   data={loaderData.forFarming.coinGraphData}
                   margin={{ left: 12, right: 12 }}
-                  className="aspect-4/1"
                 >
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -172,7 +171,23 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
                   />
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent />}
+                    content={
+                      <ChartTooltipContent
+                        hideLabel
+                        formatter={(value, name) => (
+                          <div className="flex flex-row w-28 text-foreground items-center justify-between">
+                            <span>
+                              {loaderData.forFarming!.coinGraphConfig[
+                                name as keyof typeof loaderData.forFarming.coinGraphConfig
+                              ]?.label || name}
+                            </span>
+                            <span className="font-mono tabular-nums text-muted-foreground">
+                              {abbreviateNumber(value as number)}/H
+                            </span>
+                          </div>
+                        )}
+                      />
+                    }
                   />
                   {loaderData.forFarming.distinctTiers.map((tier) => (
                     <Line
