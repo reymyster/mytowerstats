@@ -106,6 +106,7 @@ const damageShareConfig = {
 } satisfies ChartConfig;
 
 export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
+  console.log({ loaderData });
   return (
     <div className="p-4">
       <h2 className="text-2xl">Analyze Run</h2>
@@ -145,8 +146,6 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
                 <LabelList
                   dataKey="from"
                   fontSize={12}
-                  position={"outside"}
-                  offset={10}
                   formatter={(value: keyof typeof damageShareConfig) =>
                     damageShareConfig[value]?.label
                   }
