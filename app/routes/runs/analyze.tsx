@@ -94,7 +94,7 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
   console.log({ loaderData });
   return (
     <div className="p-4 flex flex-row flex-wrap">
-      <Card className="aspect-4/5 w-full lg:max-w-1/3 bg-background/50">
+      <Card className="w-full lg:max-w-1/3 2xl:max-w-1/4 bg-background/50">
         <CardHeader>
           <CardTitle>Damage Share</CardTitle>
           <CardContent className="aspect-4/5">
@@ -114,7 +114,7 @@ export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
                   tickLine={false}
                   tickMargin={10}
                   axisLine={false}
-                  width={90}
+                  width={120}
                   tickFormatter={(value) =>
                     loaderData.damageShareConfig[
                       value as keyof typeof loaderData.damageShareConfig

@@ -171,7 +171,7 @@ export function RunInfo({ data }: RunInfoProps) {
 
     const processedScreens = await Promise.all(
       inputFiles.map(async (origFile) => {
-        const blob = await preprocessImage(origFile, /* quality */ 0.4);
+        const blob = await preprocessImage(origFile, /* quality */ 0.45);
 
         const processedFile = new File([blob], origFile.name, {
           type: blob.type,
