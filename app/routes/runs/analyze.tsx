@@ -6,11 +6,21 @@ import { api } from "convex/_generated/api";
 import { getAuth } from "@clerk/react-router/ssr.server";
 
 import type { BreadcrumbHandle } from "@/types/breadcrumb";
+import { combatKeys } from "~/lib/runs/sections/combat";
+import { camelCaseToLabel } from "~/lib/utils";
 
 // Instantiate once per server (e.g. top of file)
 const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL ?? "");
 
-import { Bar, BarChart, Pie, PieChart, LabelList } from "recharts";
+import {
+  Bar,
+  BarChart,
+  Pie,
+  PieChart,
+  LabelList,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -46,114 +56,93 @@ export async function loader(args: Route.LoaderArgs) {
   if (!data) throw dataError("Run not found.", { status: 404 });
 
   const combatValues = data.values.combat.values;
+  const damagePrefixes = [...combatKeys]
+    .filter((k) => k.endsWith("Damage"))
+    .map((k) => k.replace(/Damage$/, ""));
 
-  const getDamage = (key: string) => {
-    const damagePercentage =
-      (combatValues[`${key}Damage` as keyof typeof combatValues] * 100) /
-      combatValues.damageDealt;
-    const damage = Number(damagePercentage.toFixed(2));
-    return {
-      from: key,
-      damage,
-      fill: `var(--color-${key})`,
-    };
-  };
+  const damageShareData = damagePrefixes
+    .map((prefix) => {
+      const damageRaw =
+        combatValues[`${prefix}Damage` as keyof typeof combatValues];
+      const damagePercentage = (damageRaw * 100) / combatValues.damageDealt;
+      const damage = Number(damagePercentage.toFixed(2));
 
-  const damageShareData = [
-    getDamage("blackHole"),
-    getDamage("chainLightning"),
-    getDamage("orb"),
-    getDamage("swamp"),
-    getDamage("thorn"),
-    getDamage("deathWave"),
-    getDamage("projectiles"),
-  ]
-    .filter((d) => d.damage > 0.5)
-    .toSorted((a, b) => b.damage - a.damage);
+      return {
+        from: prefix,
+        damage,
+        fill: `var(--color-${prefix})`,
+      };
+    })
+    .toSorted((a, b) => b.damage - a.damage)
+    .filter((d, i) => d.damage > 0.01 && i < 10); // limitation based on chart colors
 
-  return { damageShareData };
+  const damageShareConfig = damageShareData.reduce(
+    (p, c, i) => ({
+      ...p,
+      [c.from]: {
+        label: camelCaseToLabel(c.from),
+        color: `var(--chart-${i + 1})`,
+      },
+    }),
+    {} as Record<string, { label: string; color: string }>
+  ) satisfies ChartConfig;
+
+  return { damageShareData, damageShareConfig };
 }
-
-const damageShareConfig = {
-  orb: {
-    label: "Orb",
-    color: "var(--chart-1)",
-  },
-  chainLightning: {
-    label: "Chain Lightning",
-    color: "var(--chart-3)",
-  },
-  blackHole: {
-    label: "Black Hole",
-    color: "var(--chart-5)",
-  },
-  swamp: {
-    label: "Swamp",
-    color: "var(--chart-2)",
-  },
-  thorn: {
-    label: "Thorn",
-    color: "var(--chart-4)",
-  },
-  deathWave: {
-    label: "Death Wave",
-    color: "var(--chart-6)",
-  },
-  projectiles: {
-    label: "Projectiles",
-    color: "var(--chart-7)",
-  },
-} satisfies ChartConfig;
 
 export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
   console.log({ loaderData });
   return (
-    <div className="p-4">
-      <h2 className="text-2xl">Analyze Run</h2>
-      <Card className="flex flex-col">
-        <CardHeader className="items-center pb-0">
+    <div className="p-4 flex flex-row flex-wrap">
+      <Card className="aspect-4/5 w-full lg:max-w-1/3 bg-background/50">
+        <CardHeader>
           <CardTitle>Damage Share</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 pb-0">
-          <ChartContainer
-            config={damageShareConfig}
-            className="mx-auto aspect-square max-h-[400px]"
-          >
-            <PieChart>
-              <ChartTooltip
-                cursor={false}
-                content={
-                  <ChartTooltipContent
-                    hideLabel
-                    formatter={(value, name) => (
-                      <div className="flex flex-row min-w-[148px] items-center justify-between text-xs text-muted-foreground">
-                        {damageShareConfig[
-                          name as keyof typeof damageShareConfig
-                        ]?.label || name}
-                        <div className="ml-auto flex items-baseline font-mono font-medium tabular-nums text-foreground">
-                          {(value as number).toFixed(2)}%
-                        </div>
-                      </div>
-                    )}
-                  />
-                }
-              />
-              <Pie
+          <CardContent className="aspect-4/5">
+            <ChartContainer
+              config={loaderData.damageShareConfig}
+              className="!aspect-auto h-full"
+            >
+              <BarChart
+                accessibilityLayer
                 data={loaderData.damageShareData}
-                dataKey="damage"
-                nameKey="from"
+                layout="vertical"
+                margin={{ left: 0 }}
               >
-                <LabelList
+                <YAxis
                   dataKey="from"
-                  fontSize={12}
-                  formatter={(value: keyof typeof damageShareConfig) =>
-                    damageShareConfig[value]?.label
+                  type="category"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  width={90}
+                  tickFormatter={(value) =>
+                    loaderData.damageShareConfig[
+                      value as keyof typeof loaderData.damageShareConfig
+                    ]?.label
                   }
                 />
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-        </CardContent>
+                <XAxis dataKey="damage" type="number" hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      formatter={(value, name) => (
+                        <div className="flex flex-row w-26 text-foreground items-center justify-between">
+                          <span className="text-muted-foreground">Damage</span>
+                          <span className="font-mono tabular-nums">
+                            {value}%
+                          </span>
+                        </div>
+                      )}
+                    />
+                  }
+                />
+                <Bar dataKey="damage" layout="vertical" radius={5} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </CardHeader>
       </Card>
     </div>
   );
