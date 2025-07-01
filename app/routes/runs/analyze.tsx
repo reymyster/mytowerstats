@@ -1,26 +1,16 @@
 import type { Route } from "./+types/analyze";
 import React, { useState, useEffect } from "react";
 import { data as dataError } from "react-router";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "convex/_generated/api";
-import { getAuth } from "@clerk/react-router/ssr.server";
 
 import type { BreadcrumbHandle } from "@/types/breadcrumb";
 import { combatKeys } from "~/lib/runs/sections/combat";
 import { camelCaseToLabel } from "~/lib/utils";
 
-// Instantiate once per server (e.g. top of file)
-const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL ?? "");
+import { Effect } from "effect";
+import { RuntimeServer } from "~/lib/RuntimeServer";
+import { TowerRunService } from "~/lib/services/TowerRunService";
 
-import {
-  Bar,
-  BarChart,
-  Pie,
-  PieChart,
-  LabelList,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -42,18 +32,28 @@ export const handle: BreadcrumbHandle = {
   breadcrumb: () => "Analyze Run",
 };
 
-export async function loader(args: Route.LoaderArgs) {
-  const { userId } = await getAuth(args);
-  if (!userId) throw dataError("User not logged in.", { status: 401 });
-  const { runId } = args.params;
-  if (!runId) throw dataError("Run ID missing.", { status: 400 });
+const loaderLogic = (loaderArgs: Route.LoaderArgs) =>
+  Effect.gen(function* () {
+    const { runId } = loaderArgs.params;
 
-  const data = await convex.query(api.runs.getSingleFullInfo, {
-    userId,
-    runId,
+    const runService = yield* TowerRunService;
+
+    return yield* runService.getDetails(loaderArgs, runId);
   });
 
-  if (!data) throw dataError("Run not found.", { status: 404 });
+export async function loader(args: Route.LoaderArgs) {
+  const logic = loaderLogic(args);
+  const main = logic.pipe(
+    Effect.catchTags({
+      ClerkServiceError: (e) => Effect.succeed(`Clerk error: ${e.message}`),
+      TowerRunServiceError: (e) =>
+        Effect.succeed(`Tower Run Service error: ${e.message}`),
+    })
+  );
+
+  const data = await RuntimeServer.runPromise(main);
+
+  if (typeof data === "string") throw dataError(data, { status: 500 });
 
   const combatValues = data.values.combat.values;
   const damagePrefixes = [...combatKeys]
@@ -91,7 +91,6 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export default function AnalyzeRun({ loaderData }: Route.ComponentProps) {
-  console.log({ loaderData });
   return (
     <div className="p-4 flex flex-row flex-wrap">
       <Card className="w-full lg:max-w-1/3 2xl:max-w-1/4 bg-background/50">

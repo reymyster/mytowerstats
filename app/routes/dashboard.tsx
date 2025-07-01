@@ -189,7 +189,7 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
                       />
                     }
                   />
-                  {loaderData.forFarming.distinctTiers.map((tier) => (
+                  {loaderData.forFarming.distinctTiers.map((tier: number) => (
                     <Line
                       key={tier}
                       dataKey={tier}
