@@ -8,6 +8,7 @@ import { camelCaseToLabel } from "~/lib/utils";
 
 import { Effect } from "effect";
 import { RuntimeServer } from "~/lib/RuntimeServer";
+import { ClerkService } from "~/lib/services/ClerkService";
 import { TowerRunService } from "~/lib/services/TowerRunService";
 
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
@@ -32,26 +33,24 @@ export const handle: BreadcrumbHandle = {
   breadcrumb: () => "Analyze Run",
 };
 
-const loaderLogic = (loaderArgs: Route.LoaderArgs) =>
-  Effect.gen(function* () {
-    const { runId } = loaderArgs.params;
-
+export async function loader(args: Route.LoaderArgs) {
+  const logic = Effect.gen(function* () {
+    const clerkService = yield* ClerkService;
     const runService = yield* TowerRunService;
 
-    return yield* runService.getDetails(loaderArgs, runId);
-  });
+    const { runId } = args.params;
+    const { userId } = yield* clerkService.getUser(args);
 
-export async function loader(args: Route.LoaderArgs) {
-  const logic = loaderLogic(args);
-  const main = logic.pipe(
+    return yield* runService.getDetails(userId, runId);
+  });
+  const errorHandling = logic.pipe(
     Effect.catchTags({
       ClerkServiceError: (e) => Effect.succeed(`Clerk error: ${e.message}`),
-      TowerRunServiceError: (e) =>
-        Effect.succeed(`Tower Run Service error: ${e.message}`),
+      TowerRunServiceError: (e) => Effect.succeed(`Convex Error: ${e.message}`),
     })
   );
 
-  const data = await RuntimeServer.runPromise(main);
+  const data = await RuntimeServer.runPromise(errorHandling);
 
   if (typeof data === "string") throw dataError(data, { status: 500 });
 

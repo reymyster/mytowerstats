@@ -1,7 +1,5 @@
 import { Data, Effect } from "effect";
 import { ConvexService } from "./ConvexService";
-import { ClerkService } from "./ClerkService";
-import { type LoaderFunctionArgs } from "react-router";
 
 export class TowerRunServiceError extends Data.TaggedError(
   "TowerRunServiceError"
@@ -12,13 +10,11 @@ export class TowerRunService extends Effect.Service<TowerRunService>()(
   {
     effect: Effect.gen(function* () {
       const convex = yield* ConvexService;
-      const clerk = yield* ClerkService;
 
-      const getDetails = Effect.fn("TowerRunService.getDetails")(function* <
-        A extends LoaderFunctionArgs
-      >(loaderArgs: A, runId: string) {
-        const { userId } = yield* clerk.getUser(loaderArgs);
-
+      const getDetails = Effect.fn("TowerRunService.getDetails")(function* (
+        userId: string,
+        runId: string
+      ) {
         const data = yield* convex.use((client, api) =>
           Effect.gen(function* () {
             const result = yield* Effect.tryPromise({
@@ -43,6 +39,6 @@ export class TowerRunService extends Effect.Service<TowerRunService>()(
         getDetails,
       };
     }),
-    dependencies: [ConvexService.Default, ClerkService.Default],
+    dependencies: [ConvexService.Default],
   }
 ) {}
