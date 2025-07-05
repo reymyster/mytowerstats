@@ -11,7 +11,7 @@ export class ClerkService extends Effect.Service<ClerkService>()(
   "ClerkService",
   {
     effect: Effect.gen(function* () {
-      const getUser = Effect.fn("ClerkService.getUserId")(function* <
+      const getUser = Effect.fn("ClerkService.getUser")(function* <
         A extends LoaderFunctionArgs
       >(args: A) {
         const user = yield* Effect.tryPromise({

@@ -355,7 +355,7 @@ export function RunInfo({ data }: RunInfoProps) {
           <TabsContent value="meta">
             <Card>
               <CardHeader>Meta</CardHeader>
-              <CardContent className="flex flex-col gap-6 overflow-y-auto max-h-[75svh]">
+              <CardContent className="grid grid-cols-1 gap-6 overflow-y-auto max-h-[75svh]">
                 <div className="flex flex-col gap-2">
                   <Label>Recorded</Label>
                   <Input
@@ -398,7 +398,7 @@ export function RunInfo({ data }: RunInfoProps) {
             <TabsContent value={section} key={section}>
               <Card>
                 <CardHeader>{camelCaseToLabel(section)}</CardHeader>
-                <CardContent className="flex flex-col gap-6 overflow-y-auto max-h-[75svh]">
+                <CardContent className="grid grid-cols-1 2xl:grid-cols-2 gap-6 overflow-y-auto max-h-[75svh]">
                   {Object.values(allLabelsToKeys)
                     .filter((v) => v.section === section)
                     .map((value) => (

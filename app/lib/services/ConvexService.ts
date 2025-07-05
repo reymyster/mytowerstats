@@ -13,17 +13,32 @@ export class ConvexService extends Effect.Service<ConvexService>()(
   "ConvexService",
   {
     effect: Effect.gen(function* () {
-      const convexUrl = yield* Config.redacted("VITE_CONVEX_URL");
-      const client = yield* Effect.try({
-        try: () => new ConvexHttpClient(Redacted.value(convexUrl)),
-        catch: (e) => new ConvexServiceError({ cause: e }),
-      });
+      const use = function* <R>(
+        fn: (client: ConvexHttpClient, api: API) => Promise<R>
+      ) {
+        const convexUrl = yield* Config.redacted("VITE_CONVEX_URL");
+        const client = yield* Effect.try({
+          try: () => new ConvexHttpClient(Redacted.value(convexUrl)),
+          catch: (e) =>
+            new ConvexServiceError({
+              cause: e,
+              message: "Error initiating Convex client.",
+            }),
+        });
 
-      return {
-        use: <R, E, D>(
-          fn: (client: ConvexHttpClient, api: API) => Effect.Effect<R, E, D>
-        ) => fn(client, api),
+        const result = yield* Effect.tryPromise({
+          try: () => fn(client, api),
+          catch: (e) =>
+            new ConvexServiceError({
+              cause: e,
+              message: "Error running Convex query.",
+            }),
+        });
+
+        return result;
       };
+
+      return { use };
     }),
   }
 ) {}
