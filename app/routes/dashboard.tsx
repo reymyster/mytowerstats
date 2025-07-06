@@ -9,6 +9,12 @@ import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { format } from "date-fns";
 import { abbreviateNumber } from "~/lib/stats";
 
+import { Data, Effect } from "effect";
+import { RuntimeServer } from "~/lib/RuntimeServer";
+import { ClerkService } from "~/lib/services/ClerkService";
+import { TowerRunService } from "~/lib/services/TowerRunService";
+import type { Doc } from "convex/_generated/dataModel";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChartContainer,
@@ -24,7 +30,62 @@ export const handle: BreadcrumbHandle = {
 // Instantiate once per server (e.g. top of file)
 const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL ?? "");
 
+class DashboardAnalysisError extends Data.TaggedError(
+  "DashboardAnalysisError"
+)<{ message?: string }> {}
+
+const analyzeFarming = Effect.fn("Dashboard.analyzeFarming")(function* (
+  data: Doc<"runs">[]
+) {
+  if (!data || data.length === 0) {
+    return yield* new DashboardAnalysisError({
+      message: "No runs yet to analyze. Please log some data.",
+    });
+  }
+
+  const farmingRuns = data
+    .filter((d) => d.runType === "farming")
+    .toSorted((a, b) => a.recorded - b.recorded);
+
+  if (farmingRuns.length === 0) {
+    return yield* new DashboardAnalysisError({
+      message: "No farmings runs to analyze yet. Please log some data.",
+    });
+  }
+
+  const coinGraphData = farmingRuns.map(
+    ({ recorded, tier, coinsEarnedPerHour }) => ({
+      recorded,
+      [tier]: coinsEarnedPerHour,
+    })
+  );
+
+  return {
+    coinGraphData,
+  };
+});
+
 export async function loader(args: Route.LoaderArgs) {
+  const logic = Effect.gen(function* () {
+    const clerk = yield* ClerkService;
+    const runs = yield* TowerRunService;
+
+    const { userId } = yield* clerk.getUser(args);
+    const runData = yield* runs.getRecentList(userId);
+
+    const farming = yield* analyzeFarming(runData);
+
+    return { farming };
+  });
+  const withErrorHandling = logic.pipe(
+    Effect.catchTags({
+      ClerkServiceError: (e) => Effect.succeed(`Clerk error: ${e.message}`),
+      ConvexServiceError: (e) => Effect.succeed(`Convex error: ${e.message}`),
+      DashboardAnalysisError: (e) =>
+        Effect.succeed(`Analysis error: ${e.message}`),
+    })
+  );
+
   const { userId } = await getAuth(args);
   if (!userId) throw dataError("User not logged in.", { status: 401 });
 

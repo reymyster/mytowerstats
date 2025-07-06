@@ -10,6 +10,7 @@ import { Effect } from "effect";
 import { RuntimeServer } from "~/lib/RuntimeServer";
 import { ClerkService } from "~/lib/services/ClerkService";
 import { TowerRunService } from "~/lib/services/TowerRunService";
+import { SingleRunAnalysisService } from "~/lib/services/SingleRunAnalysisService";
 
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
@@ -35,21 +36,20 @@ export const handle: BreadcrumbHandle = {
 
 export async function loader(args: Route.LoaderArgs) {
   const logic = Effect.gen(function* () {
-    const clerkService = yield* ClerkService;
-    const runService = yield* TowerRunService;
+    const clerk = yield* ClerkService;
+    const runs = yield* TowerRunService;
+    const analysis = yield* SingleRunAnalysisService;
 
     const { runId } = args.params;
-    const { userId } = yield* clerkService.getUser(args);
+    const { userId } = yield* clerk.getUser(args);
 
-    const runData = yield* runService.getDetails(userId, runId);
+    const runData = yield* runs.getDetails(userId, runId);
 
-    const damageShare = yield* runService.analyzeSingleRunDamageShare(
-      runData.values
-    );
+    const damageShare = yield* analysis.calculateDamageShare(runData.values);
 
     return { damageShare };
   });
-  const errorHandling = logic.pipe(
+  const withErrorHandling = logic.pipe(
     Effect.catchTags({
       ClerkServiceError: (e) => Effect.succeed(`Clerk error: ${e.message}`),
       ConvexServiceError: (e) => Effect.succeed(`Convex error: ${e.message}`),
@@ -58,7 +58,7 @@ export async function loader(args: Route.LoaderArgs) {
     })
   );
 
-  const data = await RuntimeServer.runPromise(errorHandling);
+  const data = await RuntimeServer.runPromise(withErrorHandling);
 
   if (typeof data === "string") throw dataError(data, { status: 500 });
 
